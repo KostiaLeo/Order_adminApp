@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="8dp"
+    tools:ignore="MissingConstraints">
+
+<!--    <ImageView-->
+<!--        android:id="@+id/photo"-->
+<!--        android:layout_width="@dimen/ava_size"-->
+<!--        android:layout_height="@dimen/ava_size"-->
+<!--        android:layout_marginTop="@dimen/img_margtop"-->
+<!--        android:layout_marginRight="@dimen/line_margtop"-->
+<!--        android:scaleType="centerCrop" />-->
+<!--    android:layout_toRightOf="@id/photo"-->
+    <TextView
+        android:id="@+id/mail"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+
+        android:ellipsize="end"
+        android:lines="1"
+        android:scrollHorizontally="true"
+        android:text="Mail"
+        android:textColor="@color/black"
+        android:textSize="@dimen/nameSize" />
+
+    <TextView
+        android:id="@+id/name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/mail"
+        android:ellipsize="end"
+        android:lines="1"
+        android:scrollHorizontally="true"
+        android:text="Name"
+        android:textColor="@color/black"
+        android:textSize="@dimen/titleSize" />
+
+    <Button
+        android:id="@+id/no"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="no"
+        android:layout_toLeftOf="@id/yes"/>
+
+    <Button
+        android:id="@+id/yes"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:layout_alignParentRight="true"
+        android:text="yes" />
+
+    <View
+        android:id="@+id/line"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_below="@id/name"
+        android:layout_marginTop="@dimen/line_margtop"
+        android:background="@color/black" />
+</RelativeLayout>
