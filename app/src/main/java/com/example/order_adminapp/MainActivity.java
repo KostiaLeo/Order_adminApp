@@ -1,5 +1,9 @@
 package com.example.order_adminapp;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -10,6 +14,7 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.app.NotificationCompat;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -44,12 +49,16 @@ import android.widget.LinearLayout;
 
 import java.util.ArrayList;
 
+import static android.app.Notification.DEFAULT_ALL;
+
 public class MainActivity extends AppCompatActivity implements RecyclerUserAdapter.UserItemClicked {
 
-    private AppBarConfiguration mAppBarConfiguration;
-    private AlertDialog alertDialog;
     private RecyclerView userRecycler;
     private ArrayList<User> myUsers = new ArrayList<>();
+    public static final int NOTIFICATION_ID = 1;
+    private int notAllowLength = 0;
+    FirebaseFirestore firestore = FirebaseFirestore.getInstance();
+    CollectionReference colRef = firestore.collection("user");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,86 +74,27 @@ public class MainActivity extends AppCompatActivity implements RecyclerUserAdapt
                         .setAction("Action", null).show();
             }
         });
-//        DrawerLayout drawer = findViewById(R.id.drawer_layout);
-//        //NavigationView navigationView = findViewById(R.id.nav_view);
-//        // Passing each menu ID as a set of Ids because each
-//        // menu should be considered as top level destinations.
-//        mAppBarConfiguration = new AppBarConfiguration.Builder(
-//                R.id.nav_home, R.id.nav_gallery, R.id.nav_slideshow,
-//                R.id.nav_tools, R.id.nav_share, R.id.nav_send)
-//                .setDrawerLayout(drawer)
-//                .build();
-//        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
-//        NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
-//        NavigationUI.setupWithNavController(navigationView, navController);
-
 //--------------------------- firebase ----------------------------------------
         userRecycler = findViewById(R.id.users);
         userRecycler.setLayoutManager(new LinearLayoutManager(MainActivity.this));
 
         final ArrayList<User> localUsrs = this.myUsers;
-       // DatabaseReference reff = FirebaseDatabase.getInstance().getReference().child("User");
-//        reff.addListenerForSingleValueEvent(new ValueEventListener() {
-//            @Override
-//            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-//                alertDialog = new AlertDialog.Builder(MainActivity.this).create();
-//                alertDialog.setTitle("New order");
-//                for(DataSnapshot ds : dataSnapshot.getChildren()){
-//                    User user = ds.getValue(User.class);
-////                    System.out.println(user.toString());
-////                    alertDialog.setTitle(user.getName());
-////                    alertDialog.setMessage(user.getMail());
-//                    localUsrs.add(user);
-//                }
-////                LinearLayout lp = new LinearLayout(MainActivity.this);
-////                lp.setOrientation(LinearLayout.VERTICAL);
-////
-////                final Button yes = new Button(MainActivity.this);
-////                yes.setText("Yes");
-////
-////                lp.addView(yes);
-////                final Button no = new Button(MainActivity.this);
-////                yes.setText("No");
-////
-////                lp.addView(no);
-////
-////                alertDialog.setView(lp);
-////                alertDialog.show();
-//
-//                //}
-//                setRecycler(myUsers);
-//            }
-//
-//            @Override
-//            public void onCancelled(@NonNull DatabaseError databaseError) {}
-//        });
-
-        //final DocumentReference docRef = firestore.collection("users").document();
-        final FirebaseFirestore firestore = FirebaseFirestore.getInstance();
-        final CollectionReference colRef = firestore.collection("user");
-
-//        final CollectionReference colRef = firestore.collection("user")
-//                .document().update("allow", "yes");
-//        final DocumentReference docRef = firestore.collection("user").document()
-
-        colRef.addSnapshotListener(new EventListener<QuerySnapshot>() {
+        colRef.whereEqualTo("allow", "0").addSnapshotListener(new EventListener<QuerySnapshot>() {
             @Override
             public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
                 myUsers.clear();
                 localUsrs.clear();
                 for (int i = 0; i < queryDocumentSnapshots.toObjects(User.class).size(); i++) {
                     User addingUser = queryDocumentSnapshots.toObjects(User.class).get(i);
-                    if(!String.valueOf(addingUser.getAllow()).equals("yes") && !String.valueOf(addingUser.getAllow()).equals("no")) {
                         localUsrs.add(addingUser);
-                    }
                 }
                 setRecycler(myUsers);
             }
         });
+        preSendNotif();
     }
 
     private void setRecycler(ArrayList<User> users) {
-
         RecyclerUserAdapter recyclerUserAdapter = new RecyclerUserAdapter(users, this);
         userRecycler.setAdapter(recyclerUserAdapter);
     }
@@ -161,11 +111,39 @@ public class MainActivity extends AppCompatActivity implements RecyclerUserAdapt
 
     }
 
-//    @Override
-//    public boolean onSupportNavigateUp() {
-//        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
-//        return NavigationUI.navigateUp(navController, mAppBarConfiguration)
-//                || super.onSupportNavigateUp();
-//    }
+
+    private void preSendNotif(){
+        colRef.whereEqualTo("allow", "0").addSnapshotListener(new EventListener<QuerySnapshot>() {
+            @Override
+            public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
+                notAllowLength = queryDocumentSnapshots.size();
+                sendNotif(notAllowLength);
+            }
+        });
+    }
+
+    private void sendNotif(final int notAllowLength){
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        String NOTIFICATION_CHANNEL_ID = "my_channel_id_01";
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel notificationChannel = new NotificationChannel(NOTIFICATION_CHANNEL_ID, "My Notifications",
+                    NotificationManager.IMPORTANCE_DEFAULT);
+            notificationChannel.setDescription("Channel description");
+            notificationChannel.enableVibration(false);
+            notificationManager.createNotificationChannel(notificationChannel);
+        }
+
+        NotificationCompat.Builder notificationBuilder
+                = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+                .setAutoCancel(true)
+                .setDefaults(DEFAULT_ALL)
+                .setWhen(System.currentTimeMillis())
+                .setSmallIcon(R.drawable.ic_launcher_background)
+                .setTicker("Hearty365")
+                .setContentTitle("New request(s)")
+                .setContentText("You've got " + notAllowLength + " new messages");
+        notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build());
+    }
 }
 
