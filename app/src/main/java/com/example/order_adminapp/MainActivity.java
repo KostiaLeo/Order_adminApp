@@ -2,7 +2,10 @@ package com.example.order_adminapp;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.app.TaskStackBuilder;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 
@@ -79,24 +82,35 @@ public class MainActivity extends AppCompatActivity implements RecyclerUserAdapt
         userRecycler.setLayoutManager(new LinearLayoutManager(MainActivity.this));
 
         final ArrayList<User> localUsrs = this.myUsers;
-        colRef.whereEqualTo("allow", "0").addSnapshotListener(new EventListener<QuerySnapshot>() {
+        colRef.whereEqualTo("allow", "unanswered").addSnapshotListener(new EventListener<QuerySnapshot>() {
             @Override
             public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
                 myUsers.clear();
                 localUsrs.clear();
                 for (int i = 0; i < queryDocumentSnapshots.toObjects(User.class).size(); i++) {
                     User addingUser = queryDocumentSnapshots.toObjects(User.class).get(i);
-                        localUsrs.add(addingUser);
+                    localUsrs.add(addingUser);
+
                 }
                 setRecycler(myUsers);
             }
         });
         preSendNotif();
+        colRef.addSnapshotListener(new EventListener<QuerySnapshot>() {
+            @Override
+            public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
+                for (int i = 0; i < queryDocumentSnapshots.toObjects(User.class).size(); i++) {
+                    queryDocumentSnapshots.toObjects(User.class).get(i).toString();
+                }
+
+            }
+        });
     }
 
     private void setRecycler(ArrayList<User> users) {
         RecyclerUserAdapter recyclerUserAdapter = new RecyclerUserAdapter(users, this);
         userRecycler.setAdapter(recyclerUserAdapter);
+        recyclerUserAdapter.notifyItemInserted(0);
     }
 
     @Override
@@ -112,8 +126,8 @@ public class MainActivity extends AppCompatActivity implements RecyclerUserAdapt
     }
 
 
-    private void preSendNotif(){
-        colRef.whereEqualTo("allow", "0").addSnapshotListener(new EventListener<QuerySnapshot>() {
+    private void preSendNotif() {
+        colRef.whereEqualTo("allow", "unanswered").addSnapshotListener(new EventListener<QuerySnapshot>() {
             @Override
             public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
                 notAllowLength = queryDocumentSnapshots.size();
@@ -122,7 +136,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerUserAdapt
         });
     }
 
-    private void sendNotif(final int notAllowLength){
+    private void sendNotif(final int notAllowLength) {
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         String NOTIFICATION_CHANNEL_ID = "my_channel_id_01";
 
@@ -134,6 +148,14 @@ public class MainActivity extends AppCompatActivity implements RecyclerUserAdapt
             notificationManager.createNotificationChannel(notificationChannel);
         }
 
+        Intent resultIntent = new Intent(this, MainActivity.class);
+
+        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+        stackBuilder.addNextIntentWithParentStack(resultIntent);
+
+        PendingIntent resultPendingIntent =
+                stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
+
         NotificationCompat.Builder notificationBuilder
                 = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
                 .setAutoCancel(true)
@@ -143,6 +165,8 @@ public class MainActivity extends AppCompatActivity implements RecyclerUserAdapt
                 .setTicker("Hearty365")
                 .setContentTitle("New request(s)")
                 .setContentText("You've got " + notAllowLength + " new messages");
+        notificationBuilder.setContentIntent(resultPendingIntent);
+
         notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build());
     }
 }

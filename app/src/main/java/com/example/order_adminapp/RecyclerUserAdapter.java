@@ -32,6 +32,7 @@ public class RecyclerUserAdapter extends RecyclerView.Adapter<RecyclerUserAdapte
         this.userList = (ArrayList<User>) userList;
         this.callback = callback;
     }
+
     @NonNull
     @Override
     public RecyclerUserAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -61,7 +62,7 @@ public class RecyclerUserAdapter extends RecyclerView.Adapter<RecyclerUserAdapte
 
     //----------метод для заполнения каждого елемента списка -----------------------------------------------------
     @Override
-    public void onBindViewHolder(ViewHolder holder, final int position)  {
+    public void onBindViewHolder(ViewHolder holder, final int position) {
         final User user = userList.get(position);
         holder.nameTv.setText(user.getName());
         holder.mailtV.setText(user.getMail());
@@ -85,7 +86,7 @@ public class RecyclerUserAdapter extends RecyclerView.Adapter<RecyclerUserAdapte
         });
     }
 
-    private void yes_no(String iter, User user, int position){
+    private void yes_no(String iter, User user, int position) {
         colRef.document(user.getName()).update("allow", iter);
         userList.remove(position);
         notifyItemRemoved(position);
